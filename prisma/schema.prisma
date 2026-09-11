@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+}
+
+enum Season {
+  SPRING
+  SUMMER
+  FALL
+  WINTER
+  ALL_SEASON
+}
+
+enum OutfitStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ScenarioRisk {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ScenarioStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  website     String?
+  outfits     Outfit[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("brands")
+}
+
+model Outfit {
+  id          String       @id @default(cuid())
+  brandId     String
+  brand       Brand        @relation(fields: [brandId], references: [id])
+  name        String
+  slug        String       @unique
+  category    String
+  price       Decimal      @db.Decimal(10, 2)
+  description String?
+  imageUrl    String?
+  tags        String[]
+  season      Season       @default(ALL_SEASON)
+  status      OutfitStatus @default(DRAFT)
+  articles    Article[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("outfits")
+}
+
+model Article {
+  id          String        @id @default(cuid())
+  outfitId    String
+  outfit      Outfit        @relation(fields: [outfitId], references: [id])
+  title       String
+  slug        String        @unique
+  excerpt     String?
+  content     String
+  status      ArticleStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("articles")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Scenario {
+  id             String         @id @default(cuid())
+  name           String
+  objective      String
+  decision       String
+  inputParams    Json
+  aiPromptUsed   String?
+  aiRawResponse  Json?
+  predictedKpis  Json?
+  risk           ScenarioRisk?
+  recommendation String?
+  status         ScenarioStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("scenarios")
+}
+
+// Singleton: one row holds the baseline KPIs the Scenario Simulator riffs on.
+// No list/detail CRUD screen - edited from a single form on the admin Dashboard.
+model BusinessProfile {
+  id                 String   @id @default(cuid())
+  shopName           String
+  monthlyRevenue     Decimal  @db.Decimal(12, 2)
+  monthlyCosts       Decimal  @db.Decimal(12, 2)
+  monthlyCustomers   Int
+  monthlySalesVolume Int
+  marketingBudget    Decimal  @db.Decimal(12, 2)
+  updatedAt          DateTime @updatedAt
+
+  @@map("business_profile")
+}

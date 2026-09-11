@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fashion-ai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fashion
+      POSTGRES_PASSWORD: fashion
+      POSTGRES_DB: fashion_ai
+    ports:
+      # Mapped to 5438 on the host: 5432 is used by a native Postgres service,
+      # and 5433-5437 are already used by other local Docker projects on this machine.
+      # Keep this in sync with DATABASE_URL in .env / .env.example.
+      - '5438:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fashion -d fashion_ai']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

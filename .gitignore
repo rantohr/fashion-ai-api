@@ -1,1 +1,10 @@
 node_modules
+dist
+.docs
+*.tsbuildinfo
+
+# env files
+.env
+!.env.example
+
+/src/generated/prisma
