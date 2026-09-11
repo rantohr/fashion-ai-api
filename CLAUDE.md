@@ -48,10 +48,51 @@ is required — an article is always written from an outfit.
 
 ## Seed data
 
-`prisma/seed.ts` is a skeleton: only `business_profile` is seeded for now.
-The other 5 tables are meant to be populated through the admin wizards
-(Days 4/5) and a real content pass (Day 10), not hand-written fixtures —
-see the TODO comments in the seed file before adding bulk fixture data here.
+`prisma/seed.ts` seeds the `business_profile` singleton and one `ADMIN`
+user (`ADMIN_EMAIL`/`ADMIN_PASSWORD` in `.env`, default
+`admin@fashion-ai.local` / `admin123`). The other 4 tables are meant to be
+populated through the admin wizards (Days 4/5) and a real content pass
+(Day 10), not hand-written fixtures.
+
+## Auth & guards
+
+- JWT auth (`@nestjs/jwt` + `@nestjs/passport` + `passport-jwt`), single
+  `ADMIN` role, `POST /auth/login` issues a Bearer token. `AuthModule` is
+  `@Global()` and exports a **configured** `PassportModule.register({
+  defaultStrategy: 'jwt' })` — bare `PassportModule` (no `.register()`)
+  provides nothing and `JwtAuthGuard` fails to resolve `AuthModuleOptions`
+  wherever it's used; don't "simplify" that import back to a bare
+  `PassportModule`.
+- `JwtAuthGuard` (`src/auth/guards/`) protects: the entire `UsersController`
+  (admin/staff accounts are the only sensitive resource), and the
+  POST/PATCH/DELETE routes on Brands/Outfits/Articles/BusinessProfile — GET
+  routes on those stay public because the storefront (`fashion-web`) reads
+  them unauthenticated. Follow this read-public/write-guarded split for any
+  new entity controller rather than guarding the whole controller or none
+  of it.
+- Passwords are hashed with `bcryptjs` (pure JS, no native build step) —
+  `UsersService` strips `passwordHash` from every returned shape via a
+  `SafeUser` type; only `findByEmail` (used by `AuthService`) returns the
+  raw row.
+
+## Cross-cutting: filter, interceptor, validation, Swagger
+
+- `AllExceptionsFilter` (`src/common/filters/`, global via `APP_FILTER`)
+  maps Prisma's known errors (`P2002` unique conflict -> 409, `P2025` not
+  found -> 404, `P2003` bad FK -> 400) instead of letting them surface as
+  raw 500s — extend `fromPrismaError` there for any new Prisma error code
+  a service starts relying on, rather than catching `PrismaClientKnownRequestError`
+  ad hoc inside individual services.
+- `LoggingInterceptor` (`src/common/interceptors/`, global via
+  `APP_INTERCEPTOR`) logs `METHOD url +Nms` for every request.
+- Global `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true,
+  transform: true })` in `main.ts` — DTOs are the only validation layer;
+  don't re-validate in services.
+- Swagger UI at `/api` (`DocumentBuilder` + `.addBearerAuth()` in
+  `main.ts`); `nest-cli.json` has the `@nestjs/swagger` CLI plugin enabled
+  so DTO shapes are inferred from TS types without hand-writing
+  `@ApiProperty` on every field of every DTO (it's still added explicitly
+  where an example/enum/default is worth documenting).
 
 ## Skills
 
@@ -62,5 +103,5 @@ see the TODO comments in the seed file before adding bulk fixture data here.
   the client generator, and how the client connects.
 - `nest-crud-module` (`.claude/skills/`) — scaffolds a CRUD
   module (controller + service + DTOs, wired to `PrismaService`) matching
-  this repo's conventions. Use it instead of hand-writing the next entity's
-  boilerplate (Day 2: Brands/Outfits/Articles/BusinessProfile).
+  this repo's conventions, including the read-public/write-guarded pattern
+  above. Use it instead of hand-writing the next entity's boilerplate.
