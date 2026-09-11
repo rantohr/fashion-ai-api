@@ -20,7 +20,11 @@ export class CreateBrandDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsUrl()
+  // require_tld: false - the uploads endpoint returns http://localhost:PORT/...
+  // URLs in local dev, which validator.js's default IsUrl() rejects for
+  // lacking a TLD. `website` below stays strict since it's always meant to
+  // be a real public URL, not a local upload.
+  @IsUrl({ require_tld: false })
   logoUrl?: string;
 
   @ApiProperty({ required: false })

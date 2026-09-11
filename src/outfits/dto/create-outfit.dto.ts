@@ -44,7 +44,10 @@ export class CreateOutfitDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsUrl()
+  // require_tld: false - the uploads endpoint returns http://localhost:PORT/...
+  // URLs in local dev, which validator.js's default IsUrl() rejects for
+  // lacking a TLD.
+  @IsUrl({ require_tld: false })
   imageUrl?: string;
 
   @ApiProperty({ required: false, type: [String] })

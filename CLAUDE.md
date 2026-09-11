@@ -94,6 +94,28 @@ populated through the admin wizards (Days 4/5) and a real content pass
   `@ApiProperty` on every field of every DTO (it's still added explicitly
   where an example/enum/default is worth documenting).
 
+## File uploads
+
+- `UploadsModule` (`src/uploads/`) — `POST /uploads` (guarded, `multipart/form-data`,
+  field name `file`) saves to local disk (`UPLOADS_DIR` = `<repo>/uploads`,
+  gitignored, created at boot in `main.ts` via `mkdirSync`) and returns an
+  **absolute** URL (`http://<host>/uploads/<uuid>.<ext>`) built from the
+  request itself, not a relative path. Files are served back via
+  `app.useStaticAssets(UPLOADS_DIR, { prefix: '/uploads/' })` — this requires
+  `NestFactory.create<NestExpressApplication>(...)`, not the default
+  platform-agnostic type, or `useStaticAssets` won't exist on `app`.
+- `fileFilter` only allows `image/png|jpeg|webp`; `limits.fileSize` caps at
+  8 MB. No cloud storage per the plan (§4) — this is intentionally simple.
+- **`@IsUrl()` gotcha**: validator.js's default `IsUrl()` rejects
+  `http://localhost:3000/...` (no TLD). `Outfit.imageUrl` and
+  `Brand.logoUrl` both use `@IsUrl({ require_tld: false })` because they
+  can legitimately hold a local upload URL; `Brand.website` stays strict
+  (`@IsUrl()`) since it's always meant to be a real public URL. If a new
+  DTO field will ever hold an uploads-endpoint URL, it needs the same
+  `require_tld: false` — this bug silently 400s every wizard/logo-upload
+  submission otherwise, and is easy to miss because it only reproduces
+  with a real localhost URL, not with `https://example.com` in Swagger.
+
 ## Skills
 
 - `.agents/skills/` (symlinked from `.claude/skills/`) — official Prisma

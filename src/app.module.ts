@@ -11,6 +11,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
 import { OutfitsModule } from './outfits/outfits.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { UploadsModule } from './uploads/uploads.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module.js';
     OutfitsModule,
     ArticlesModule,
     BusinessProfileModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [
