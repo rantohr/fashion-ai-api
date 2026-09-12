@@ -98,12 +98,29 @@ populated through the admin wizards (Days 4/5) and a real content pass
 
 ## Dashboard stats (Day 5)
 
-`GET /dashboard/stats` (`src/dashboard/`) returns `{ brands, outfits,
-articles, users }` — plain `Promise.all([...prisma.<model>.count()])`, no
-transaction needed since these are independent reads, not writes. This is
-the admin Dashboard's KPI-card data; the *business_profile* KPI form on
-that same page is unrelated and already served by the existing
-`BusinessProfileController` (Day 2) — don't duplicate that here.
+`GET /dashboard/stats` (`src/dashboard/`) is one aggregate call, all
+`Promise.all`'d (no transaction needed — independent reads, not writes):
+
+- `totals` — plain counts per table (`brands`/`outfits`/`articles`/`users`/
+  `scenarios`), via `prisma.<model>.count()`.
+- `outfitsByStatus`/`outfitsBySeason`/`articlesByStatus` — `groupBy` +
+  `_count: { _all: true }`, then **filled in against every enum value**
+  (`Object.values(OutfitStatus)` etc.) so a status/season with zero rows
+  still appears as `{ status: 'ARCHIVED', count: 0 }` instead of being
+  silently absent — `groupBy` only returns rows that actually occur.
+  Extend this fill-in pattern for any new breakdown rather than returning
+  `groupBy`'s raw (possibly-partial) result directly.
+- `topBrands` — `prisma.brand.findMany` with `_count: { select: {
+  outfits: true } }` and `orderBy: { outfits: { _count: 'desc' } }`, capped
+  at 5 and filtered to brands with at least one outfit.
+- `pricing` — `prisma.outfit.aggregate` (`_min`/`_max`/`_avg` on `price`),
+  converted from Prisma `Decimal` to `number` (same gotcha as everywhere
+  else `price` appears); all three are `null` when there are no outfits.
+- `recentOutfits`/`recentArticles` — last 5 by `createdAt desc`.
+
+This is the admin Dashboard's KPI/analytics data; the *business_profile*
+edit form on that same page is unrelated and already served by the
+existing `BusinessProfileController` (Day 2) — don't duplicate that here.
 
 ## File uploads
 
