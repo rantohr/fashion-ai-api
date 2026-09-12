@@ -43,8 +43,9 @@ consent from an unrelated approval earlier in a session.
 
 6 tables (see `prisma/schema.prisma`): `brands`, `outfits`, `articles`,
 `users` (admin/staff only — no storefront accounts), `scenarios`,
-`business_profile` (singleton, no list/detail screen). `articles.outfitId`
-is required — an article is always written from an outfit.
+`business_profile` (singleton, no list/detail screen). `articles` is
+independent — no relation to `outfits` or any other table (this reverses
+an earlier plan decision; don't reintroduce an `outfitId` FK).
 
 ## Seed data
 

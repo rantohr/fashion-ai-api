@@ -73,17 +73,15 @@ model Outfit {
   tags        String[]
   season      Season       @default(ALL_SEASON)
   status      OutfitStatus @default(DRAFT)
-  articles    Article[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   @@map("outfits")
 }
 
+// Independent from outfits - articles carry no relation to any other table.
 model Article {
   id          String        @id @default(cuid())
-  outfitId    String
-  outfit      Outfit        @relation(fields: [outfitId], references: [id])
   title       String
   slug        String        @unique
   excerpt     String?

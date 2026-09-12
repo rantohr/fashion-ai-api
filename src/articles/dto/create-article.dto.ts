@@ -2,11 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { ArticleStatus } from '../../generated/prisma/enums.js';
 
+// Independent from outfits - no relation to any other table (see CLAUDE.md).
 export class CreateArticleDto {
-  @ApiProperty()
-  @IsString()
-  outfitId!: string;
-
   @ApiProperty({ example: 'Styling the Midnight Trench for Fall' })
   @IsString()
   title!: string;
