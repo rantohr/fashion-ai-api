@@ -65,12 +65,13 @@ populated through the admin wizards (Days 4/5) and a real content pass
   wherever it's used; don't "simplify" that import back to a bare
   `PassportModule`.
 - `JwtAuthGuard` (`src/auth/guards/`) protects: the entire `UsersController`
-  (admin/staff accounts are the only sensitive resource), and the
+  and the entire `DashboardController` (admin/staff accounts and internal
+  aggregate stats have no public-storefront reason to exist), and the
   POST/PATCH/DELETE routes on Brands/Outfits/Articles/BusinessProfile — GET
   routes on those stay public because the storefront (`fashion-web`) reads
   them unauthenticated. Follow this read-public/write-guarded split for any
-  new entity controller rather than guarding the whole controller or none
-  of it.
+  new *content* entity controller; guard the whole controller instead only
+  for admin-internal resources like Users/Dashboard.
 - Passwords are hashed with `bcryptjs` (pure JS, no native build step) —
   `UsersService` strips `passwordHash` from every returned shape via a
   `SafeUser` type; only `findByEmail` (used by `AuthService`) returns the
@@ -94,6 +95,15 @@ populated through the admin wizards (Days 4/5) and a real content pass
   so DTO shapes are inferred from TS types without hand-writing
   `@ApiProperty` on every field of every DTO (it's still added explicitly
   where an example/enum/default is worth documenting).
+
+## Dashboard stats (Day 5)
+
+`GET /dashboard/stats` (`src/dashboard/`) returns `{ brands, outfits,
+articles, users }` — plain `Promise.all([...prisma.<model>.count()])`, no
+transaction needed since these are independent reads, not writes. This is
+the admin Dashboard's KPI-card data; the *business_profile* KPI form on
+that same page is unrelated and already served by the existing
+`BusinessProfileController` (Day 2) — don't duplicate that here.
 
 ## File uploads
 
