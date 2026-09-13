@@ -8,15 +8,15 @@ export class ArticlesService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.article.findMany({ include: { outfit: true }, orderBy: { createdAt: 'desc' } });
+    return this.prisma.article.findMany({ orderBy: { createdAt: 'desc' } });
   }
 
   findOne(id: string) {
-    return this.prisma.article.findUniqueOrThrow({ where: { id }, include: { outfit: true } });
+    return this.prisma.article.findUniqueOrThrow({ where: { id } });
   }
 
   findBySlug(slug: string) {
-    return this.prisma.article.findUniqueOrThrow({ where: { slug }, include: { outfit: true } });
+    return this.prisma.article.findUniqueOrThrow({ where: { slug } });
   }
 
   create(dto: CreateArticleDto) {

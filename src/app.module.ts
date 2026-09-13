@@ -9,6 +9,7 @@ import { BrandsModule } from './brands/brands.module.js';
 import { BusinessProfileModule } from './business-profile/business-profile.module.js';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 import { OutfitsModule } from './outfits/outfits.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
@@ -25,6 +26,7 @@ import { UsersModule } from './users/users.module.js';
     ArticlesModule,
     BusinessProfileModule,
     UploadsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

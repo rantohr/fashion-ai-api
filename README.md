@@ -21,6 +21,10 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
+## Project plan
+
+See the [Fashion AI Build Plan](https://claude.ai/code/artifact/2760987a-bf21-4a5c-ab54-3a3fb75d1584) for the full 10-day build plan: scope, data model, architecture, and day-by-day schedule.
+
 ## Description
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.

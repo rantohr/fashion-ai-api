@@ -43,8 +43,9 @@ consent from an unrelated approval earlier in a session.
 
 6 tables (see `prisma/schema.prisma`): `brands`, `outfits`, `articles`,
 `users` (admin/staff only — no storefront accounts), `scenarios`,
-`business_profile` (singleton, no list/detail screen). `articles.outfitId`
-is required — an article is always written from an outfit.
+`business_profile` (singleton, no list/detail screen). `articles` is
+independent — no relation to `outfits` or any other table (this reverses
+an earlier plan decision; don't reintroduce an `outfitId` FK).
 
 ## Seed data
 
@@ -64,12 +65,13 @@ populated through the admin wizards (Days 4/5) and a real content pass
   wherever it's used; don't "simplify" that import back to a bare
   `PassportModule`.
 - `JwtAuthGuard` (`src/auth/guards/`) protects: the entire `UsersController`
-  (admin/staff accounts are the only sensitive resource), and the
+  and the entire `DashboardController` (admin/staff accounts and internal
+  aggregate stats have no public-storefront reason to exist), and the
   POST/PATCH/DELETE routes on Brands/Outfits/Articles/BusinessProfile — GET
   routes on those stay public because the storefront (`fashion-web`) reads
   them unauthenticated. Follow this read-public/write-guarded split for any
-  new entity controller rather than guarding the whole controller or none
-  of it.
+  new *content* entity controller; guard the whole controller instead only
+  for admin-internal resources like Users/Dashboard.
 - Passwords are hashed with `bcryptjs` (pure JS, no native build step) —
   `UsersService` strips `passwordHash` from every returned shape via a
   `SafeUser` type; only `findByEmail` (used by `AuthService`) returns the
@@ -93,6 +95,32 @@ populated through the admin wizards (Days 4/5) and a real content pass
   so DTO shapes are inferred from TS types without hand-writing
   `@ApiProperty` on every field of every DTO (it's still added explicitly
   where an example/enum/default is worth documenting).
+
+## Dashboard stats (Day 5)
+
+`GET /dashboard/stats` (`src/dashboard/`) is one aggregate call, all
+`Promise.all`'d (no transaction needed — independent reads, not writes):
+
+- `totals` — plain counts per table (`brands`/`outfits`/`articles`/`users`/
+  `scenarios`), via `prisma.<model>.count()`.
+- `outfitsByStatus`/`outfitsBySeason`/`articlesByStatus` — `groupBy` +
+  `_count: { _all: true }`, then **filled in against every enum value**
+  (`Object.values(OutfitStatus)` etc.) so a status/season with zero rows
+  still appears as `{ status: 'ARCHIVED', count: 0 }` instead of being
+  silently absent — `groupBy` only returns rows that actually occur.
+  Extend this fill-in pattern for any new breakdown rather than returning
+  `groupBy`'s raw (possibly-partial) result directly.
+- `topBrands` — `prisma.brand.findMany` with `_count: { select: {
+  outfits: true } }` and `orderBy: { outfits: { _count: 'desc' } }`, capped
+  at 5 and filtered to brands with at least one outfit.
+- `pricing` — `prisma.outfit.aggregate` (`_min`/`_max`/`_avg` on `price`),
+  converted from Prisma `Decimal` to `number` (same gotcha as everywhere
+  else `price` appears); all three are `null` when there are no outfits.
+- `recentOutfits`/`recentArticles` — last 5 by `createdAt desc`.
+
+This is the admin Dashboard's KPI/analytics data; the *business_profile*
+edit form on that same page is unrelated and already served by the
+existing `BusinessProfileController` (Day 2) — don't duplicate that here.
 
 ## File uploads
 
